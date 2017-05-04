@@ -2,14 +2,13 @@ module Main where
 import System.IO
 import Data.HashSet
 
-data Queue _type = Queue [_type] deriving (Show)
 
 push :: String -> [String] -> [String]
 push element queue = queue ++ [element]
 
 
-pop :: [String] -> (String, [String])
-pop queue = (head queue, tail queue)
+pop :: [String] -> [String]
+pop queue = tail queue
 
 
 peek :: [String] -> String
@@ -33,22 +32,24 @@ isAdjacents :: String -> String -> Bool
 isAdjacents x y = getDiff x y == 1
 
 
-addAdjacentsBuff :: Int -> [String] -> [String] -> String -> [String]
-addAdjacentsBuff currentIndex list queue word =
-    if currentIndex /= (length list - 1) && isAdjacents (list !! currentIndex) word
-        then (addAdjacentsBuff (currentIndex + 1) list (push (list !! currentIndex) queue) word)
+--addAdjacentsBuff :: Int -> [String] -> [String] -> String -> [String]
+addAdjacentsBuff currentIndex list queue used word = do
+    let currentElement = list !! currentIndex
+    if currentIndex /= (length list - 1) && isAdjacents (currentElement) word && not (member currentElement used)
+        then (addAdjacentsBuff (currentIndex + 1) list (push (currentElement) queue) (insert currentElement used) word)
         else if (currentIndex == length list - 1)
-            then queue
-            else (addAdjacentsBuff (currentIndex + 1) list queue word)
+            then (queue, used)
+            else (addAdjacentsBuff (currentIndex + 1) list queue used word)
 
 
-addAdjacents :: [String] -> [String] -> String -> [String]
-addAdjacents list queue word =
-    addAdjacentsBuff 0 list queue word
+--addAdjacents :: [String] -> [String] -> String -> [String]
+addAdjacents list queue used word =
+    addAdjacentsBuff 0 list queue used word
 
 
 smartPrintBuff currentIndex list = do
-    putStrLn(list !! currentIndex)
+    let currentElement = list !! currentIndex
+    putStrLn(currentElement)
     if (currentIndex /= length list - 1) then smartPrintBuff (currentIndex + 1) list else nop
 
 
@@ -56,10 +57,24 @@ smartPrint list = do
     smartPrintBuff 0 list
 
 
+updateQueue words queue used = do
+    let el = peek queue
+    addAdjacents words (pop queue) used el
+
+
+checkUsed used lastWord = do
+    print(if (member lastWord used) then "Final!" else "Not final")
+
+
+loop queue words used lastWord = do
+    let q = updateQueue words queue used
+    if member lastWord used then used else loop (fst q) words (snd q) lastWord
+
+
 main = do
     content <- readFile "dictionary.txt"
     let words = lines content
-    let q = addAdjacents words ["муха"] "муха"
-    let new_q = snd (pop q)
-    smartPrint new_q
-    
+    let used = fromList ["муха"]
+    let queue = ["муха"]
+    let finalSet = loop queue words used "меха"
+    smartPrint $ toList $ finalSet
