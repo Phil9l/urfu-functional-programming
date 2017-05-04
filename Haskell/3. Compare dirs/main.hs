@@ -7,10 +7,6 @@ import Data.ByteString.Lazy as Bytes (readFile)
 import System.Environment (getArgs)
 
 
-merge [] ys = ys
-merge (x:xs) ys = x:merge ys xs 
-
-
 doesPathExist :: FilePath -> IO Bool
 doesPathExist path = do
     directoryExists <- doesDirectoryExist path
@@ -62,7 +58,7 @@ compareFolders root1 root2 = do
     names1 <- getDirectoryContents root1
     names2 <- getDirectoryContents root2
     
-    let mergedNames = nub (merge names1 names2) 
+    let mergedNames = nub (concat [names1, names2]) 
     let names = filter (`notElem` [".", ".."]) mergedNames
 
 

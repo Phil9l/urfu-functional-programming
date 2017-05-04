@@ -7,11 +7,6 @@ import Data.ByteString.Lazy as Bytes (readFile)
 import System.Environment (getArgs)
 
 
--- Function to merge 2 lists.
-merge [] ys = ys
-merge (x:xs) ys = x:merge ys xs 
-
-
 -- Function to check if file or folder exists.
 doesPathExist :: FilePath -> IO Bool
 doesPathExist path = do
@@ -87,7 +82,7 @@ compareFolders root1 root2 = do
     names2 <- getDirectoryContents root2
     
     -- Get list of all file and folder names in both directories, remove duplicates.
-    let mergedNames = nub (merge names1 names2) 
+    let mergedNames = nub (concat [names1, names2]) 
     -- Remove "." and ".." from file list.
     let names = filter (`notElem` [".", ".."]) mergedNames
 
