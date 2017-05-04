@@ -2,11 +2,6 @@ module Main where
 import System.IO
 
 
-_readFile n = do
-    f <- openFile n ReadMode
-    hSetEncoding f utf8_bom
-    hGetContents f
-
 getDiffBuff :: String -> String -> Int -> Int
 getDiffBuff x y i = (if (x !! i) /= (y !! i) then 1 else 0) + if (i /= 0) then getDiffBuff x y (i - 1) else 0
 
@@ -20,7 +15,7 @@ isAdj x y = getDiff x y == 1
 
 
 main = do
-    content <- _readFile "dictionary.txt"
+    content <- readFile "dictionary.txt"
     let words = lines content
     let a = words !! 0
     let b = words !! 5
