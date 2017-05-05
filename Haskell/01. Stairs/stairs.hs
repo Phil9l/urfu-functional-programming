@@ -1,6 +1,8 @@
 module Main where
 import System.IO
-import Data.HashSet
+import qualified Data.HashSet as Set
+import qualified Data.HashMap.Strict as Dict
+import qualified Data.Maybe as Maybe
 
 
 push :: String -> [String] -> [String]
@@ -35,8 +37,8 @@ isAdjacents x y = getDiff x y == 1
 --addAdjacentsBuff :: Int -> [String] -> [String] -> String -> [String]
 addAdjacentsBuff currentIndex list queue used word = do
     let currentElement = list !! currentIndex
-    if currentIndex /= (length list - 1) && isAdjacents (currentElement) word && not (member currentElement used)
-        then (addAdjacentsBuff (currentIndex + 1) list (push (currentElement) queue) (insert currentElement used) word)
+    if currentIndex /= (length list - 1) && isAdjacents (currentElement) word && not (Set.member currentElement used)
+        then (addAdjacentsBuff (currentIndex + 1) list (push (currentElement) queue) (Set.insert currentElement used) word)
         else if (currentIndex == length list - 1)
             then (queue, used)
             else (addAdjacentsBuff (currentIndex + 1) list queue used word)
@@ -62,19 +64,29 @@ updateQueue words queue used = do
     addAdjacents words (pop queue) used el
 
 
-checkUsed used lastWord = do
-    print(if (member lastWord used) then "Final!" else "Not final")
-
-
 loop queue words used lastWord = do
-    let q = updateQueue words queue used
-    if member lastWord used then used else loop (fst q) words (snd q) lastWord
+    if length queue /= 0
+        then (if (Set.member lastWord used) || (length used == length words) then used else loop (fst (updateQueue words queue used)) words (snd (updateQueue words queue used)) lastWord)
+        else used
 
 
 main = do
     content <- readFile "dictionary.txt"
     let words = lines content
-    let used = fromList ["муха"]
-    let queue = ["муха"]
-    let finalSet = loop queue words used "меха"
-    smartPrint $ toList $ finalSet
+    let start = "муха"
+    let used = Set.fromList [start]
+    let queue = [start]
+    let a = Dict.insert "3" "2" Dict.empty
+    let b = Dict.lookup "3" a
+    print(Maybe.fromJust b)
+    {-
+    let q = updateQueue words queue used
+    let q0 = updateQueue words (fst q) (snd q)
+    let q1 = updateQueue words (fst q0) (snd q0)
+    let q2 = updateQueue words (fst q1) (snd q1)
+    let q3 = updateQueue words (fst q2) (snd q2)
+    let q4 = updateQueue words (fst q3) (snd q3)
+    let q5 = updateQueue words (fst q4) (snd q4)-}
+    let finalSet = loop queue words used "кура"
+    smartPrint $ Set.toList $ finalSet
+    --print(length (snd q1))
