@@ -80,11 +80,17 @@ compareFolders root1 root2 = do
                         return ()
                     else do
                         if (path1IsDirectory && not (path2IsDirectory)) || (not (path1IsDirectory) && path2IsDirectory)
-                            then putStrLn("One of [" ++ path1 ++ ", " ++ path2 ++ "] is directory, the other is file")
+                            then do
+                                if path1IsDirectory
+                                    then putStrLn("[dir] " ++ path1 ++ "\n[file] " ++ path2)
+                                    else putStrLn("[dir] " ++ path1 ++ "\n[file] " ++ path2)
                             else do
                                 compareFiles path1 path2
                                 return ()
-            else putStrLn("Exists only one from [" ++ path1 ++ ", " ++ path2 ++ "]")
+            else do
+                if path1Exists
+                    then putStrLn("[+] " ++ path1 ++ "\n[-] " ++ path2)
+                    else putStrLn("[+] " ++ path2 ++ "\n[-] " ++ path1)
     return ()
 
 

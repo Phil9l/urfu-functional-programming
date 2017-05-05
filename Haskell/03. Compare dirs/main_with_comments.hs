@@ -111,13 +111,19 @@ compareFolders root1 root2 = do
                     else do
                         if (path1IsDirectory && not (path2IsDirectory)) || (not (path1IsDirectory) && path2IsDirectory)
                             -- If one is file and the other is directory, print error.
-                            then putStrLn("One of [" ++ path1 ++ ", " ++ path2 ++ "] is directory, the other is file")
+                            then do
+                                if path1IsDirectory
+                                    then putStrLn("[dir] " ++ path1 ++ "\n[file] " ++ path2)
+                                    else putStrLn("[dir] " ++ path1 ++ "\n[file] " ++ path2)
                             -- Compare as files otherwise.
                             else do
                                 compareFiles path1 path2
                                 return ()
             -- If file exists only in one folder, print error.
-            else putStrLn("Exists only one from [" ++ path1 ++ ", " ++ path2 ++ "]")
+            else
+                if path1Exists
+                    then putStrLn("[+] " ++ path1 ++ "\n[-] " ++ path2)
+                    else putStrLn("[+] " ++ path2 ++ "\n[-] " ++ path1)
     return ()
 
 
