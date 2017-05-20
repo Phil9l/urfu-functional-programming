@@ -21,63 +21,78 @@ nop :: IO ()
 nop = sequence_ []
 
 
-getDiffBuff :: String -> String -> Int -> Int
-getDiffBuff x y i = (if (x !! i) /= (y !! i) then 1 else 0) + if (i /= 0) then getDiffBuff x y (i - 1) else 0
+repl :: String -> Int -> Char -> String
+repl s pos c = (take pos s) ++ [c] ++ (drop (pos + 1) s)
 
 
-getDiff :: String -> String -> Int
-getDiff x y =
-    getDiffBuff x y (length x - 1)
+getAdjes :: String -> [String]
+getAdjes word = concat (map (\pos -> map (\c -> repl word pos c) ['а' .. 'я']) [0 .. (length word) - 1])
 
 
-isAdjacents :: String -> String -> Bool
-isAdjacents x y = getDiff x y == 1
+findNeighbours :: Set.HashSet String -> String -> [String]
+findNeighbours dict word = filter (\x -> Set.member x dict) (getAdjes word)
 
 
-ddAdjacentsBuff currentIndex list queue used word = do
-    let currentElement = list !! currentIndex
-    if currentIndex /= (length list - 1) && isAdjacents (currentElement) word && not (Set.member currentElement used)
-        then (addAdjacentsBuff (currentIndex + 1) list (push (currentElement) queue) (Set.insert currentElement used) word)
-        else if (currentIndex == length list - 1)
-            then (queue, used)
-            else (addAdjacentsBuff (currentIndex + 1) list queue used word)
+qmanyAddingBuff :: [String] -> [String] -> Int -> [String]
+qmanyAddingBuff queue list index = if (index == (length list)) then queue else qmanyAddingBuff (push (list !! index) queue) list (index + 1)
 
 
---addAdjacents :: [String] -> [String] -> String -> [String]
-addAdjacents list queue used word =
-    addAdjacentsBuff 0 list queue used word
+
+qmanyAdding :: [String] -> [String] -> [String]
+qmanyAdding queue list = qmanyAddingBuff queue list 0
 
 
-smartPrintBuff currentIndex list = do
-    let currentElement = list !! currentIndex
-    putStrLn(currentElement)
-    if (currentIndex /= length list - 1) then smartPrintBuff (currentIndex + 1) list else nop
+smanyAddingBuff :: Set.HashSet String -> [String] -> Int -> Set.HashSet String
+smanyAddingBuff used list index = if (index == (length list)) then used else smanyAddingBuff (Set.insert (list !! index) used) list (index + 1)
 
 
-smartPrint list = do
-    smartPrintBuff 0 list
+smanyAdding :: Set.HashSet String -> [String] -> Set.HashSet String
+smanyAdding used list = smanyAddingBuff used list 0
 
 
-updateQueue words queue used = do
-    let el = peek queue
-    addAdjacents words (pop queue) used el
+pmanyAddingBuff :: Dict.HashMap String String ->  String -> [String] -> Int -> Dict.HashMap String String
+pmanyAddingBuff path word list index = if (index == (length list)) then path else pmanyAddingBuff (Dict.insert (list !! index) word path) word list (index + 1)
 
 
-loop queue words used lastWord = do
-    if length queue /= 0
-        then (if (Set.member lastWord used) || (length used == length words) then used else loop (fst (updateQueue words queue used)) words (snd (updateQueue words queue used)) lastWord)
-        else used
+pmanyAdding :: Dict.HashMap String String ->  String -> [String] -> Dict.HashMap String String
+pmanyAdding path word list = pmanyAddingBuff path word list 0
 
 
+loop queue used path words finish = do
+    if ((length queue) == 0)
+        then Dict.empty
+        else do
+            let buff = peek queue
+            let usefulNeirs = filter (\x -> (not(Set.member x used))) (findNeighbours words buff)
+            let newQueue = pop $ qmanyAdding queue usefulNeirs
+            let newUsed = smanyAdding used usefulNeirs
+            let newPath = pmanyAdding path buff usefulNeirs
+            if (Set.member finish newUsed) then newPath else (loop newQueue newUsed newPath words finish)
+
+
+smartPrintBuff words index = do
+    if (index == (length words))
+        then nop
+        else do
+            (putStrLn (words !! index))
+            smartPrintBuff words (index + 1)
+
+smartPrint words = do smartPrintBuff words 0
+
+
+recoverPathBuff path start finish current finalPath = if (current == start) then finalPath else (recoverPathBuff path start finish (Maybe.fromJust (Dict.lookup current path)) (finalPath ++ [current]))
+recoverPath path start finish = recoverPathBuff path start finish finish []
 main = do
-    content <- readFile "dictionary.txt"
-    let words = lines content
-    let start = "муха"
-    let used = Set.fromList [start]
+    content <- readFile "dict.txt"
+    start <- getLine
+    finish <- getLine
+    putStrLn("======================")
+    let words = Set.fromList (filter (\x -> (length x) == (length start)) (lines content))
+    let path = Dict.insert start "xxxx" Dict.empty
+    let used = Set.insert start Set.empty
     let queue = [start]
-    let a = Dict.insert "3" "2" Dict.empty
-    let b = Dict.lookup "3" a
-    print(Maybe.fromJust b)
 
-    let finalSet = loop queue words used "кура"
-    smartPrint $ Set.toList $ finalSet
+    let newPath = loop queue used path words finish
+    if (newPath == Dict.empty)
+        then putStrLn("Пути не существует")
+        else smartPrint(reverse ((recoverPath newPath start finish) ++ [start]))
